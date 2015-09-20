@@ -16,7 +16,7 @@ With my phone I would be able to increase or decrease the maximum speed and set 
 * a 5800mA LiPo battery
 * Hobby King 150A ESC
 * an arduino uno board (for controlling the ESC)
-* mbientlab (metawear)[https://www.mbientlab.com/] board  (for the convenient BLE communication between my phone and the arduino)
+* mbientlab [metawear](https://www.mbientlab.com/) board  (for the convenient BLE communication between my phone and the arduino)
 
 ### Software
 * a Java Android mobile application, using the mbientlab SDK
