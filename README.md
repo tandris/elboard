@@ -3,7 +3,7 @@ This is my DIY electric longboard project, I know there are a few out there, but
 
 ## Vision
 
-My vision is an electric longboard which can be rode without any kind of controller, so it's totally "hand free".
+My vision is an electric longboard which can be rode without any kind of controller, so it can be totally "hand free".
 
 To achieve this, I would like to build a button like mechanism on the board. The button's functionality is simple, when I press it, the board is speeding up, when I release it, the board is slowing down. 
 On the one hand, the button provides a simple, two phase, controlling mechanism, on the other hand, it works as a safety function, when I fall off the board, it will stop and not goes away. 
