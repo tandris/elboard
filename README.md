@@ -6,9 +6,9 @@ This is my DIY electric longboard project, I know there are a few out there, but
 My vision is an electric longboard which can be rode without any kind of controller, so it can be totally "hand free".
 
 To achieve this, I would like to build a button like mechanism on the board. The button's functionality is simple, when I press it, the board is speeding up, when I release it, the board is slowing down. 
-On the one hand, the button provides a simple, two phase, controlling mechanism, on the other hand, it works as a safety function, when I fall off the board, it will stop and not goes away. 
+On the one hand, the button provides a simple, two phase, controlling mechanism, on the other hand, it works as a safety function, when I fall off the board, it will stops and not goes away. 
 
-However, the ability of settting the proper maximum speed is also an important aspect. But, in my opinion, the continious speed controlling during the ride is not a need. Actually, I think, if I can set the maximum speed and the board accelerates until that speed when I step on the button is totally enough. So, I would like to create a mobile application which can set some basic parameters on the board's ESC, like:
+However, the ability of settting the proper maximum speed is also an important aspect. But, in my opinion, the continious speed controlling during the ride is not a need. Actually, I think, if I can set the maximum speed and the board accelerates until that speed when I step on the button is totally enough. To set the speed, I would like to create a mobile application which can set some basic parameters on the board's ESC, like:
 * maximum speed
 * accelerating characteristics
 * breaking aggressivity
