@@ -1,4 +1,4 @@
-package metawear.tandris.com.myapplication.util;
+package com.tandris.elboard.mobile.bluetooth;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;

@@ -1,4 +1,4 @@
-# BoardBot
+# elBoard
 
 This is my DIY electric longboard project.
 

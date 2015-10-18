@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package metawear.tandris.com.myapplication;
+package com.tandris.elboard.mobile;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;

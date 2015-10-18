@@ -1,23 +1,19 @@
-package metawear.tandris.com.myapplication;
+package com.tandris.elboard.mobile;
 
 import android.app.Activity;
-import android.content.ComponentName;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.WebView;
 import android.widget.CompoundButton;
-import android.widget.RadioButton;
 import android.widget.Switch;
 import android.widget.Toast;
 
-import java.util.concurrent.Callable;
+import com.tandris.elboard.mobile.bluetooth.BtConnectionHandler;
 
-import metawear.tandris.com.myapplication.util.BtConnectionHandler;
+import java.util.concurrent.Callable;
 
 public class MainActivity extends Activity {
 
