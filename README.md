@@ -42,7 +42,7 @@ These parameters will be controlled by an Androis mobile application.
 1. The application should be able to communicate with the ARDUINO board via bluetooth.
 2. The mobile application should connects to the board automatically at startup.
 3. The application should be controlled by touch events and through the hardware volume buttons too.
---1. The mobile device's volume buttons should control the board's current maximum speed.
+4. The mobile device's volume buttons should control the board's current maximum speed.
 
 ### ARDUINO application
 
