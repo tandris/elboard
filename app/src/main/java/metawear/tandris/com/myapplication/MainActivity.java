@@ -1,58 +1,48 @@
 package metawear.tandris.com.myapplication;
 
 import android.app.Activity;
-import android.bluetooth.BluetoothManager;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
-import android.widget.ProgressBar;
-import android.widget.SeekBar;
-import android.widget.TextView;
-
-import com.mbientlab.metawear.AsyncOperation;
-import com.mbientlab.metawear.MetaWearBleService;
-import com.mbientlab.metawear.MetaWearBoard;
-import com.mbientlab.metawear.module.Haptic;
-import com.mbientlab.metawear.module.I2C;
+import android.webkit.WebView;
+import android.widget.CompoundButton;
+import android.widget.RadioButton;
+import android.widget.Switch;
+import android.widget.Toast;
 
 import java.util.concurrent.Callable;
 
-import metawear.tandris.com.myapplication.util.MetaWearUtil;
+import metawear.tandris.com.myapplication.util.BtConnectionHandler;
 
-public class MainActivity extends Activity implements ServiceConnection {
+public class MainActivity extends Activity {
 
-    private MetaWearUtil metaUtil;
+    private static final String TAG = MainActivity.class.getName();
+
+    private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
+    private static final int REQUEST_ENABLE_BT = 3;
+
+    // private MetaWearUtil metaUtil;
     private Handler uiHandler;
 
-    @Override
-    public void onServiceConnected(ComponentName name, IBinder service) {
-        metaUtil = new MetaWearUtil(((MetaWearBleService.LocalBinder) service));
-        ((Button) findViewById(R.id.connectBtn)).setEnabled(true);
-    }
-
-    @Override
-    public void onServiceDisconnected(ComponentName name) {
-        metaUtil = null;
-        ((Button) findViewById(R.id.connectBtn)).setEnabled(false);
-    }
+    private BtConnectionHandler btConnectionHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         uiHandler = new Handler();
-        getApplicationContext().bindService(new Intent(this, MetaWearBleService.class), this, Context.BIND_AUTO_CREATE);
 
-        ((SeekBar)findViewById(R.id.seekBar)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        initLedSwitch();
+        initConnectionSwitch();
+
+        /*getApplicationContext().bindService(new Intent(this, MetaWearBleService.class), this, Context.BIND_AUTO_CREATE);
+
+        ((SeekBar) findViewById(R.id.seekBar)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 ((TextView) findViewById(R.id.seekValueTest)).setText(String.valueOf(getServoValue()));
@@ -68,7 +58,14 @@ public class MainActivity extends Activity implements ServiceConnection {
             public void onStopTrackingTouch(SeekBar seekBar) {
 
             }
-        });
+        });*/
+
+        btConnectionHandler = new BtConnectionHandler();
+        try {
+            btConnectionHandler.selectDeviceByName("BandiBot");
+        } catch (Exception e) {
+            errorExit("BT connection failed.", "BT connection failed.");
+        }
     }
 
     @Override
@@ -85,15 +82,116 @@ public class MainActivity extends Activity implements ServiceConnection {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        Intent serverIntent = null;
+        switch (id) {
+            case R.id.secure_connect_scan:
+                // Launch the DeviceListActivity to see devices and do scan
+                serverIntent = new Intent(this, BtDeviceListActivity.class);
+                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE_SECURE);
+                return true;
+            case R.id.action_settings:
+                return true;
         }
-
-        return super.onOptionsItemSelected(item);
+        return false;
     }
 
-    public void connectMetaWear(View view) {
+    @Override
+    protected void onDestroy() {
+        try {
+            btConnectionHandler.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        super.onDestroy();
+    }
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case REQUEST_CONNECT_DEVICE_SECURE:
+                // When DeviceListActivity returns with a device to connect
+                if (resultCode == Activity.RESULT_OK) {
+                    try {
+                        String address = data.getExtras().getString(BtDeviceListActivity.EXTRA_DEVICE_ADDRESS);
+                        connectToDevice(address);
+                    } catch (Exception e) {
+                        errorExit("Connection error", e.getMessage());
+                    }
+                }
+                break;
+        }
+    }
+
+    private void errorExit(String title, String message) {
+        Toast msg = Toast.makeText(getBaseContext(), title + " - " + message, Toast.LENGTH_SHORT);
+        msg.show();
+        //finish();
+    }
+
+    private void updateConnectionStatus() {
+        uiHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                WebView statusView = (WebView) findViewById(R.id.status_view);
+                statusView.loadData("<div>Device name: <b>" + (btConnectionHandler.isConnected() ? btConnectionHandler.getConnectedBtDeviceName() : "no device") + "</b></div>", "text/html", null);
+                ((Switch) findViewById(R.id.connectionStatus)).setChecked(btConnectionHandler.isConnected());
+                ((Switch) findViewById(R.id.led_switch)).setEnabled(btConnectionHandler.isConnected());
+            }
+        });
+    }
+
+    public void initLedSwitch() {
+        ((Switch) findViewById(R.id.led_switch)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                try {
+                    btConnectionHandler.sendData(isChecked ? "1" : "0");
+                } catch (Exception e) {
+                    errorExit("Communication error", e.getMessage());
+                }
+            }
+        });
+    }
+
+    public void initConnectionSwitch() {
+        ((Switch) findViewById(R.id.connectionStatus)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                try {
+                    if(!isChecked && btConnectionHandler.isConnected()) {
+                        btConnectionHandler.disconnect();
+                    } else if(isChecked && !btConnectionHandler.isConnected()){
+                        connectToDevice(null);
+                    }
+                } catch (Exception e) {
+                    errorExit("Communication error", e.getMessage());
+                }
+            }
+        });
+    }
+
+    private void connectToDevice(String address) throws Exception {
+        if(address == null) {
+            btConnectionHandler.connect(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    updateConnectionStatus();
+                    return null;
+                }
+            });
+        } else {
+            btConnectionHandler.connectToDevice(address, new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    updateConnectionStatus();
+                    return null;
+                }
+            });
+        }
+    }
+
+    /*public void connectMetaWear(View view) {
         if (metaUtil != null) {
             metaUtil.connect((BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE), new Callable<Void>() {
                 @Override
@@ -149,9 +247,9 @@ public class MainActivity extends Activity implements ServiceConnection {
 
     private void setServo() {
         try {
-            float value = (int)getServoValue();
-            metaUtil.getBoard().getModule(Haptic.class).startMotor(100, (short)value);
-        } catch(Exception e) {
+            float value = (int) getServoValue();
+            metaUtil.getBoard().getModule(Haptic.class).startMotor(100, (short) value);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -159,10 +257,11 @@ public class MainActivity extends Activity implements ServiceConnection {
     private float getServoValue() {
         long max = 2400;
         long min = 544;
-        float value = (float)(((SeekBar)findViewById(R.id.seekBar)).getProgress());
+        float value = (float) (((SeekBar) findViewById(R.id.seekBar)).getProgress());
         value /= 180;
         value *= 100;
-        value = ((int)(value / 10)) * 10;
+        value = ((int) (value / 10)) * 10;
         return value;
-    }
+    }*/
+
 }
