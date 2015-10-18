@@ -46,5 +46,7 @@ These parameters will be controlled by an Androis mobile application.
 
 ### ARDUINO application
 
+### Requirements
+
 1. The ARDUINO board should be able to control the ESC according to the current maximum speed.
 2. The ARDUINO board should be able to accept commands via bluetooth
