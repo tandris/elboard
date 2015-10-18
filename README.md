@@ -1,30 +1,34 @@
-# metaboard
-This is my DIY electric longboard project, I know there are a few out there, but this is mine:)
+# BoardBot
+
+This is my DIY electric longboard project.
 
 ## Vision
 
-My vision is an electric longboard which can be rode without any kind of controller, so it can be totally "hand free".
+My vision is an electric longboard which can be rode without any kind of "in hand controller", because carrying a controller during the ride is just simple inconvenient.
+To replace the controller's functionality a button will be mounted to the boards surface, so this will be a two phase controller:
 
-To achieve this, I would like to build a button like mechanism on the board. The button's functionality is simple, when I press it, the board is speeding up, when I release it, the board is slowing down. 
-On the one hand, the button provides a simple, two phase, controlling mechanism, on the other hand, it works as a safety function, when I fall off the board, it will stops and not goes away. 
+* when the button has pushed the board will increase the speed until the current maximum
+* when the button has released the board will decrease the speed until it stops
 
-However, the ability of settting the proper maximum speed is also an important aspect. But, in my opinion, the continious speed controlling during the ride is not a need. Actually, I think, if I can set the maximum speed and the board accelerates until that speed when I step on the button is totally enough. To set the speed, I would like to create a mobile application which can set some basic parameters on the board's ESC, like:
-* maximum speed
-* accelerating characteristics
-* breaking aggressivity
+The current board top speed will be about 25-30 km/h which can be too fast in some circumstances, because of that the board will be able to accept commands via bluetooth to set the
 
-The difference between this and the other controller based solutions is that I only need a controller (my phone) when I would like to change the speed, for example once before and a few time under the ride.
+* current maximum speed
+* speed increasing characteristics
+* speed decreasing characteristics
 
 ## Project description
 
 ### Hardware parts
+
 * my bustin longboard
-* a 270kv electro motor
+* a 270kv electric motor
 * a 5800mA LiPo battery
 * Hobby King 150A ESC
-* an arduino uno board (for controlling the ESC)
-* mbientlab [metawear](https://www.mbientlab.com/) board  (for the convenient BLE communication between my phone and the arduino) (this is for prototyping only)
+* an ARDUINO UNO board
+* JY-MCU Bluetooth adapter for the mobile and board communication
+* Android mobile device
 
-### Software
-* a Java Android mobile application which can communicate with the board
-* arduino C script which runs on the board
+### Software parts
+
+* an Android 4.0 mobile application to control the ARDUINO board
+* an ARDUINO C script to control the ESC
