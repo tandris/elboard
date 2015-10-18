@@ -1,6 +1,6 @@
 # elBoard
 
-This is my DIY electric longboard project name elBoard. The project's goal is the create a longboard which will be powered by an electronic motor.
+This is my DIY electric longboard project name elBoard. The project's goal is to create a longboard which will be powered by an electronic motor.
 
 ## Vision
 
