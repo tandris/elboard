@@ -128,6 +128,20 @@ public class BtConnectionHandler {
         }
     }
 
+    public void sendData(int value) throws Exception {
+        if (outStream != null) {
+            try {
+                outStream.write(value);
+            } catch (IOException e) {
+                String msg = "Bluetooth device output stream write error.";
+                Log.e(TAG, msg, e);
+                throw new Exception(msg);
+            }
+        } else {
+            throw new Exception("No bluetooth device selected.");
+        }
+    }
+
     /**
      * Disconnects the connected device.
      *

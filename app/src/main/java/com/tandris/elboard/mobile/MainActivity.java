@@ -8,10 +8,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.WebView;
 import android.widget.CompoundButton;
+import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.Toast;
 
-import com.tandris.elboard.mobile.bluetooth.BtConnectionHandler;
+import com.tandris.elboard.mobile.bluetooth.ElBoardCommunicationHandler;
 
 import java.util.concurrent.Callable;
 
@@ -22,10 +23,15 @@ public class MainActivity extends Activity {
     private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
     private static final int REQUEST_ENABLE_BT = 3;
 
-    // private MetaWearUtil metaUtil;
     private Handler uiHandler;
 
-    private BtConnectionHandler btConnectionHandler;
+    private ElBoardCommunicationHandler boardConnectionHandler;
+
+    private static final String STATUS_TEMPLATE = "<table>" +
+            "<tr><td>Device name: </td><td>%DEVICE_NAME%</td></tr>" +
+            "<tr><td>Current speed:</td><td>%CURRENT_SPEED%%</td></tr>" +
+            "</tr>" +
+            "</table>";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,32 +39,13 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         uiHandler = new Handler();
 
-        initLedSwitch();
+        initPowerSwitch();
         initConnectionSwitch();
+        initSpeedSeeker();
 
-        /*getApplicationContext().bindService(new Intent(this, MetaWearBleService.class), this, Context.BIND_AUTO_CREATE);
-
-        ((SeekBar) findViewById(R.id.seekBar)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                ((TextView) findViewById(R.id.seekValueTest)).setText(String.valueOf(getServoValue()));
-                setServo();
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });*/
-
-        btConnectionHandler = new BtConnectionHandler();
+        boardConnectionHandler = new ElBoardCommunicationHandler();
         try {
-            btConnectionHandler.selectDeviceByName("BandiBot");
+            boardConnectionHandler.selectDeviceByName("BandiBot");
         } catch (Exception e) {
             errorExit("BT connection failed.", "BT connection failed.");
         }
@@ -94,7 +81,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         try {
-            btConnectionHandler.disconnect();
+            boardConnectionHandler.disconnect();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -128,20 +115,28 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 WebView statusView = (WebView) findViewById(R.id.status_view);
-                statusView.loadData("<div>Device name: <b>" + (btConnectionHandler.isConnected() ? btConnectionHandler.getConnectedBtDeviceName() : "no device") + "</b></div>", "text/html", null);
-                ((Switch) findViewById(R.id.connectionStatus)).setChecked(btConnectionHandler.isConnected());
-                ((Switch) findViewById(R.id.led_switch)).setEnabled(btConnectionHandler.isConnected());
+
+                String statusValue = STATUS_TEMPLATE.replaceAll("%DEVICE_NAME%", (boardConnectionHandler.isConnected() ? boardConnectionHandler.getConnectedBtDeviceName() : "no device"));
+                statusValue = statusValue.replaceAll("%CURRENT_SPEED%", String.valueOf(boardConnectionHandler.getCurrentSpeedPercentage()));
+                statusView.loadData(statusValue, "text/html", null);
+
+                ((Switch) findViewById(R.id.connectionStatus)).setChecked(boardConnectionHandler.isConnected());
+                ((Switch) findViewById(R.id.start_motor)).setEnabled(boardConnectionHandler.isPowerOn());
             }
         });
     }
 
-    public void initLedSwitch() {
-        ((Switch) findViewById(R.id.led_switch)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+    public void initPowerSwitch() {
+        ((Switch) findViewById(R.id.start_motor)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 try {
-                    btConnectionHandler.sendData(isChecked ? "1" : "0");
+                    if(isChecked) {
+                        boardConnectionHandler.startMotor();
+                    } else {
+                        boardConnectionHandler.stopMotor();
+                    }
                 } catch (Exception e) {
                     errorExit("Communication error", e.getMessage());
                 }
@@ -155,9 +150,9 @@ public class MainActivity extends Activity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 try {
-                    if(!isChecked && btConnectionHandler.isConnected()) {
-                        btConnectionHandler.disconnect();
-                    } else if(isChecked && !btConnectionHandler.isConnected()){
+                    if (!isChecked && boardConnectionHandler.isConnected()) {
+                        boardConnectionHandler.disconnect();
+                    } else if (isChecked && !boardConnectionHandler.isConnected()) {
                         connectToDevice(null);
                     }
                 } catch (Exception e) {
@@ -167,9 +162,34 @@ public class MainActivity extends Activity {
         });
     }
 
+    public void initSpeedSeeker() {
+        ((SeekBar) findViewById(R.id.speepSeek)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                try {
+                    float ratio = (100f - ElBoardCommunicationHandler.NEUTRAL_VALUE) / 100f;
+                    boardConnectionHandler.setCurrentSpeed(((int)(progress * ratio)) + ElBoardCommunicationHandler.NEUTRAL_VALUE);
+                    updateConnectionStatus();
+                } catch (Exception e) {
+                    errorExit("Speed set error", e.getMessage());
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+    }
+
     private void connectToDevice(String address) throws Exception {
-        if(address == null) {
-            btConnectionHandler.connect(new Callable<Void>() {
+        if (address == null) {
+            boardConnectionHandler.connect(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
                     updateConnectionStatus();
@@ -177,7 +197,7 @@ public class MainActivity extends Activity {
                 }
             });
         } else {
-            btConnectionHandler.connectToDevice(address, new Callable<Void>() {
+            boardConnectionHandler.connectToDevice(address, new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
                     updateConnectionStatus();
