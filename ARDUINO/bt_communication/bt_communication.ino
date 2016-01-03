@@ -21,6 +21,9 @@ String _btName;
 
 //  the current servo value
 int servoMaxThrottle = 0;
+int servoMinThrottle = 0;
+//  reverse servo mode
+bool reverse = true;
 int servoCurrentThrottle = 0;
 
 int buttonState = 0;
@@ -57,21 +60,48 @@ void modeBoardControl() {
       Serial.println("Servo DETACH command received.");
     } else if (val == 1) {
       servoMaxThrottle = 1500;
+      servoMinThrottle = 1600;
       boardEsc.attach(ESC_PIN, 700, 2000);
       servoAttached = true;
       Serial.println("Servo ATTACH command received.");
     } else {
-      servoMaxThrottle = map(val, 0, 100, 700, 2000);
+      if (reverse) {
+        // min value is 65, max value is 100
+        servoMinThrottle = map((65 - val) + 65, 0, 100, 700, 2000);
+        Serial.print("Min throttle ");
+        Serial.println(servoMinThrottle);
+      } else {
+        servoMaxThrottle = map(val, 0, 100, 700, 2000);
+        Serial.print("Max throttle ");
+        Serial.println(servoMaxThrottle);
+      }
     }
   }
 
   //  write the servo value
   if (servoAttached) {
     if (buttonState == 1) {
-      servoCurrentThrottle = 1550;
+      if (reverse) {
+        if (servoCurrentThrottle < 1550)
+        {
+          servoCurrentThrottle += 5;
+        }
+        else {
+          servoCurrentThrottle = 1550;
+        }
+      } else {
+        if (servoCurrentThrottle > 1550)
+        {
+          servoCurrentThrottle -= 5;
+        }
+        else {
+          servoCurrentThrottle = 1550;
+        }
+      }
     } else {
       stepThrottle();
     }
+    Serial.println(servoCurrentThrottle);
     boardEsc.writeMicroseconds(servoCurrentThrottle);
   }
 }
@@ -83,17 +113,30 @@ void loop() {
 int stepCycle = 6;
 int cycleCnt = 0;
 void stepThrottle() {
-  if (servoCurrentThrottle != servoMaxThrottle) {
-    cycleCnt++;
-    if (cycleCnt == stepCycle) {
-      cycleCnt = 0;
-      if (servoCurrentThrottle < servoMaxThrottle) {
-        servoCurrentThrottle++;
-      } else {
-        servoCurrentThrottle--;
+  if (reverse) {
+    if (servoCurrentThrottle != servoMinThrottle) {
+      cycleCnt++;
+      if (cycleCnt == stepCycle) {
+        cycleCnt = 0;
+        if (servoCurrentThrottle > servoMinThrottle) {
+          servoCurrentThrottle -= 2;
+        } else {
+          servoCurrentThrottle += 2;
+        }
       }
     }
-    Serial.println(servoCurrentThrottle);
+  } else {
+    if (servoCurrentThrottle != servoMaxThrottle) {
+      cycleCnt++;
+      if (cycleCnt == stepCycle) {
+        cycleCnt = 0;
+        if (servoCurrentThrottle < servoMaxThrottle) {
+          servoCurrentThrottle += 2;
+        } else {
+          servoCurrentThrottle -= 2;
+        }
+      }
+    }
   }
 }
 
@@ -117,4 +160,3 @@ int convertEscCmd(float val) {
   val += 700;
   return val;
 }
-
